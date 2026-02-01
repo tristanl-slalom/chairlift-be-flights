@@ -46,36 +46,36 @@ export class TasksServiceStack extends cdk.Stack {
     const createTaskFn = new lambda.Function(this, 'CreateTaskFunction', {
       ...lambdaProps,
       functionName: 'concepto-create-task',
-      handler: 'create-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist/handlers'))
+      handler: 'handlers/create-task.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
     });
 
     const getTaskFn = new lambda.Function(this, 'GetTaskFunction', {
       ...lambdaProps,
       functionName: 'concepto-get-task',
-      handler: 'get-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist/handlers'))
+      handler: 'handlers/get-task.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
     });
 
     const listTasksFn = new lambda.Function(this, 'ListTasksFunction', {
       ...lambdaProps,
       functionName: 'concepto-list-tasks',
-      handler: 'list-tasks.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist/handlers'))
+      handler: 'handlers/list-tasks.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
     });
 
     const updateTaskFn = new lambda.Function(this, 'UpdateTaskFunction', {
       ...lambdaProps,
       functionName: 'concepto-update-task',
-      handler: 'update-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist/handlers'))
+      handler: 'handlers/update-task.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
     });
 
     const deleteTaskFn = new lambda.Function(this, 'DeleteTaskFunction', {
       ...lambdaProps,
       functionName: 'concepto-delete-task',
-      handler: 'delete-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist/handlers'))
+      handler: 'handlers/delete-task.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
     });
 
     // Grant DynamoDB permissions
