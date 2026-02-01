@@ -5,8 +5,7 @@ import {
   GetCommand,
   UpdateCommand,
   DeleteCommand,
-  QueryCommand,
-  ScanCommand
+  QueryCommand
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { Task, DynamoDBTask, CreateTaskInput, UpdateTaskInput, TaskStatus } from '../models/task.model';
@@ -153,10 +152,9 @@ export class TaskRepository {
 
   async list(status?: TaskStatus): Promise<Task[]> {
     try {
-      let result;
-
       if (status) {
-        result = await docClient.send(new QueryCommand({
+        // Query specific status
+        const result = await docClient.send(new QueryCommand({
           TableName: this.tableName,
           IndexName: 'GSI1',
           KeyConditionExpression: 'GSI1PK = :gsi1pk',
@@ -165,18 +163,28 @@ export class TaskRepository {
           },
           ScanIndexForward: false
         }));
+        return (result.Items || []).map(item => this.toTask(item as DynamoDBTask));
       } else {
-        // Use Scan to get all tasks when no status filter
-        result = await docClient.send(new ScanCommand({
-          TableName: this.tableName,
-          FilterExpression: 'begins_with(PK, :prefix)',
-          ExpressionAttributeValues: {
-            ':prefix': 'TASK#'
-          }
-        }));
-      }
+        // Query all statuses individually and merge results
+        // This avoids using Scan, which is a hard rule for this application
+        const statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE];
+        const results = await Promise.all(
+          statuses.map(s =>
+            docClient.send(new QueryCommand({
+              TableName: this.tableName,
+              IndexName: 'GSI1',
+              KeyConditionExpression: 'GSI1PK = :gsi1pk',
+              ExpressionAttributeValues: {
+                ':gsi1pk': `STATUS#${s}`
+              },
+              ScanIndexForward: false
+            }))
+          )
+        );
 
-      return (result.Items || []).map(item => this.toTask(item as DynamoDBTask));
+        const allItems = results.flatMap(result => result.Items || []);
+        return allItems.map(item => this.toTask(item as DynamoDBTask));
+      }
     } catch (error) {
       logger.error('Error listing tasks', { status, error });
       throw error;
