@@ -5,7 +5,8 @@ import {
   GetCommand,
   UpdateCommand,
   DeleteCommand,
-  QueryCommand
+  QueryCommand,
+  ScanCommand
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { Task, DynamoDBTask, CreateTaskInput, UpdateTaskInput, TaskStatus } from '../models/task.model';
@@ -165,14 +166,13 @@ export class TaskRepository {
           ScanIndexForward: false
         }));
       } else {
-        result = await docClient.send(new QueryCommand({
+        // Use Scan to get all tasks when no status filter
+        result = await docClient.send(new ScanCommand({
           TableName: this.tableName,
-          IndexName: 'GSI1',
-          KeyConditionExpression: 'begins_with(GSI1PK, :prefix)',
+          FilterExpression: 'begins_with(PK, :prefix)',
           ExpressionAttributeValues: {
-            ':prefix': 'STATUS#'
-          },
-          ScanIndexForward: false
+            ':prefix': 'TASK#'
+          }
         }));
       }
 
