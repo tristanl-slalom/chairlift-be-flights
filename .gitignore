@@ -3,9 +3,9 @@ node_modules/
 
 # Build output
 dist/
-*.js
-*.d.ts
-*.js.map
+dist/**/*.js
+dist/**/*.d.ts
+dist/**/*.js.map
 
 # CDK
 .cdk.staging/
