@@ -6,6 +6,7 @@ dist/
 dist/**/*.js
 dist/**/*.d.ts
 dist/**/*.js.map
+lambda-dist/
 
 # CDK
 .cdk.staging/

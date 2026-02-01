@@ -47,35 +47,35 @@ export class TasksServiceStack extends cdk.Stack {
       ...lambdaProps,
       functionName: 'concepto-create-task',
       handler: 'handlers/create-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
     });
 
     const getTaskFn = new lambda.Function(this, 'GetTaskFunction', {
       ...lambdaProps,
       functionName: 'concepto-get-task',
       handler: 'handlers/get-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
     });
 
     const listTasksFn = new lambda.Function(this, 'ListTasksFunction', {
       ...lambdaProps,
       functionName: 'concepto-list-tasks',
       handler: 'handlers/list-tasks.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
     });
 
     const updateTaskFn = new lambda.Function(this, 'UpdateTaskFunction', {
       ...lambdaProps,
       functionName: 'concepto-update-task',
       handler: 'handlers/update-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
     });
 
     const deleteTaskFn = new lambda.Function(this, 'DeleteTaskFunction', {
       ...lambdaProps,
       functionName: 'concepto-delete-task',
       handler: 'handlers/delete-task.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist'))
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
     });
 
     // Grant DynamoDB permissions
