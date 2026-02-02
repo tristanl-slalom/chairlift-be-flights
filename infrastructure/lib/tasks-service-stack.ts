@@ -28,9 +28,20 @@ export class TasksServiceStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL
     });
 
+    // Status Configuration Table
+    const statusConfigTable = new dynamodb.Table(this, 'TaskStatusConfigTable', {
+      tableName: 'concepto-task-statuses',
+      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      pointInTimeRecovery: true
+    });
+
     // Lambda function configuration
     const lambdaEnvironment = {
       TABLE_NAME: table.tableName,
+      STATUS_CONFIG_TABLE_NAME: statusConfigTable.tableName,
       LOG_LEVEL: 'info'
     };
 
@@ -78,12 +89,66 @@ export class TasksServiceStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
     });
 
+    // Status Management Lambda Functions
+    const createStatusFn = new lambda.Function(this, 'CreateStatusFunction', {
+      ...lambdaProps,
+      functionName: 'concepto-create-status',
+      handler: 'handlers/status/create-status.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
+    });
+
+    const listStatusesFn = new lambda.Function(this, 'ListStatusesFunction', {
+      ...lambdaProps,
+      functionName: 'concepto-list-statuses',
+      handler: 'handlers/status/list-statuses.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
+    });
+
+    const getStatusFn = new lambda.Function(this, 'GetStatusFunction', {
+      ...lambdaProps,
+      functionName: 'concepto-get-status',
+      handler: 'handlers/status/get-status.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
+    });
+
+    const updateStatusFn = new lambda.Function(this, 'UpdateStatusFunction', {
+      ...lambdaProps,
+      functionName: 'concepto-update-status',
+      handler: 'handlers/status/update-status.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
+    });
+
+    const deleteStatusFn = new lambda.Function(this, 'DeleteStatusFunction', {
+      ...lambdaProps,
+      functionName: 'concepto-delete-status',
+      handler: 'handlers/status/delete-status.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
+    });
+
+    const reorderStatusesFn = new lambda.Function(this, 'ReorderStatusesFunction', {
+      ...lambdaProps,
+      functionName: 'concepto-reorder-statuses',
+      handler: 'handlers/status/reorder-statuses.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-dist'))
+    });
+
     // Grant DynamoDB permissions
     table.grantReadWriteData(createTaskFn);
     table.grantReadData(getTaskFn);
     table.grantReadData(listTasksFn);
     table.grantReadWriteData(updateTaskFn);
     table.grantReadWriteData(deleteTaskFn);
+
+    // Grant status config table permissions
+    statusConfigTable.grantReadData(createTaskFn);
+    statusConfigTable.grantReadData(updateTaskFn);
+    statusConfigTable.grantReadData(listTasksFn);
+    statusConfigTable.grantReadWriteData(createStatusFn);
+    statusConfigTable.grantReadData(listStatusesFn);
+    statusConfigTable.grantReadData(getStatusFn);
+    statusConfigTable.grantReadWriteData(updateStatusFn);
+    statusConfigTable.grantReadWriteData(deleteStatusFn);
+    statusConfigTable.grantReadWriteData(reorderStatusesFn);
 
     // API Gateway
     const api = new apigateway.RestApi(this, 'TasksApi', {
@@ -112,12 +177,24 @@ export class TasksServiceStack extends cdk.Stack {
     const tasks = api.root.addResource('tasks');
     const task = tasks.addResource('{id}');
 
-    // API Methods
+    const statuses = api.root.addResource('statuses');
+    const status = statuses.addResource('{statusKey}');
+    const statusesReorder = statuses.addResource('reorder');
+
+    // Task API Methods
     tasks.addMethod('POST', new apigateway.LambdaIntegration(createTaskFn));
     tasks.addMethod('GET', new apigateway.LambdaIntegration(listTasksFn));
     task.addMethod('GET', new apigateway.LambdaIntegration(getTaskFn));
     task.addMethod('PUT', new apigateway.LambdaIntegration(updateTaskFn));
     task.addMethod('DELETE', new apigateway.LambdaIntegration(deleteTaskFn));
+
+    // Status API Methods
+    statuses.addMethod('POST', new apigateway.LambdaIntegration(createStatusFn));
+    statuses.addMethod('GET', new apigateway.LambdaIntegration(listStatusesFn));
+    status.addMethod('GET', new apigateway.LambdaIntegration(getStatusFn));
+    status.addMethod('PUT', new apigateway.LambdaIntegration(updateStatusFn));
+    status.addMethod('DELETE', new apigateway.LambdaIntegration(deleteStatusFn));
+    statusesReorder.addMethod('POST', new apigateway.LambdaIntegration(reorderStatusesFn));
 
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {

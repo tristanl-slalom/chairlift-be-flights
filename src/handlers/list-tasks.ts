@@ -1,17 +1,13 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { TaskStatus } from '../models/task.model';
 import { taskRepository } from '../repositories/task.repository';
 import { successResponse, errorResponse } from '../utils/response';
 import logger from '../utils/logger';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    const status = event.queryStringParameters?.status as TaskStatus | undefined;
+    const status = event.queryStringParameters?.status;
 
-    if (status && !Object.values(TaskStatus).includes(status)) {
-      return errorResponse('Invalid status value', 400);
-    }
-
+    // Status validation now happens at repository level (dynamic from config)
     const tasks = await taskRepository.list(status);
     return successResponse(tasks);
   } catch (error) {

@@ -10,6 +10,8 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Task, DynamoDBTask, CreateTaskInput, UpdateTaskInput, TaskStatus } from '../models/task.model';
 import logger from '../utils/logger';
+import { statusCache } from '../utils/status-cache';
+import { validateStatus } from '../utils/validate-status';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -27,15 +29,22 @@ export class TaskRepository {
     const id = uuidv4();
     const now = new Date().toISOString();
 
+    // Get default status from cache if not provided
+    const defaultStatus = await statusCache.getDefaultStatus();
+    const taskStatus = input.status || defaultStatus;
+
+    // Validate the status
+    await validateStatus(taskStatus);
+
     const task: DynamoDBTask = {
       PK: `TASK#${id}`,
       SK: `TASK#${id}`,
-      GSI1PK: `STATUS#${input.status || TaskStatus.TODO}`,
+      GSI1PK: `STATUS#${taskStatus}`,
       GSI1SK: `CREATED_AT#${now}`,
       id,
       title: input.title,
       description: input.description,
-      status: input.status || TaskStatus.TODO,
+      status: taskStatus,
       createdAt: now,
       updatedAt: now
     };
@@ -103,6 +112,9 @@ export class TaskRepository {
     }
 
     if (input.status !== undefined) {
+      // Validate the status
+      await validateStatus(input.status);
+
       updateExpressions.push('#status = :status');
       updateExpressions.push('#GSI1PK = :GSI1PK');
       expressionAttributeNames['#status'] = 'status';
@@ -165,9 +177,9 @@ export class TaskRepository {
         }));
         return (result.Items || []).map(item => this.toTask(item as DynamoDBTask));
       } else {
-        // Query all statuses individually and merge results
+        // Query all active statuses individually and merge results
         // This avoids using Scan, which is a hard rule for this application
-        const statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE];
+        const statuses = await statusCache.getActiveStatusKeys();
         const results = await Promise.all(
           statuses.map(s =>
             docClient.send(new QueryCommand({

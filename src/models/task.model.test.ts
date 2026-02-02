@@ -56,15 +56,19 @@ describe('Task Models', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should reject invalid status', () => {
+    it('should accept any string as status (runtime validation happens in repository)', () => {
       const input = {
         title: 'Test Task',
         description: 'Test description',
-        status: 'INVALID'
+        status: 'CUSTOM_STATUS'
       };
 
+      // Schema accepts any string; dynamic validation happens at repository level
       const result = CreateTaskSchema.safeParse(input);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.status).toBe('CUSTOM_STATUS');
+      }
     });
   });
 
