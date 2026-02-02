@@ -22,6 +22,10 @@ export const successResponse = (data: unknown, statusCode = 200): APIGatewayProx
   return createResponse(statusCode, { data });
 };
 
-export const errorResponse = (message: string, statusCode = 500): APIGatewayProxyResult => {
-  return createResponse(statusCode, { error: message });
+export const errorResponse = (message: string, statusCode = 500, details?: any): APIGatewayProxyResult => {
+  const body: any = { error: message };
+  if (details) {
+    body.details = details;
+  }
+  return createResponse(statusCode, body);
 };

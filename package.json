@@ -1,7 +1,7 @@
 {
-  "name": "concepto-be-tasks",
+  "name": "@chairlift/be-flights",
   "version": "1.0.0",
-  "description": "Tasks microservice for Concepto application",
+  "description": "Flights microservice for Chairlift application",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -15,7 +15,7 @@
     "cdk:destroy": "cdk destroy",
     "cdk:synth": "cdk synth"
   },
-  "keywords": ["tasks", "microservice", "serverless", "dynamodb"],
+  "keywords": ["flights", "microservice", "serverless", "dynamodb", "travel"],
   "author": "",
   "license": "MIT",
   "dependencies": {

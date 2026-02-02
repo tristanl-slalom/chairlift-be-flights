@@ -50,7 +50,7 @@ jobs:
       - name: Output API URL
         run: |
           API_URL=$(aws cloudformation describe-stacks \
-            --stack-name ConceptoTasksServiceStack \
+            --stack-name ChairliftFlightsServiceStack \
             --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
             --output text)
           echo "API URL: $API_URL"

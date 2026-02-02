@@ -1,6 +1,6 @@
-# Concepto Tasks Microservice
+# Chairlift Flights Microservice
 
-Backend microservice for managing tasks in the Concepto application. Built with AWS Lambda, DynamoDB, and API Gateway.
+Backend microservice for managing flights in the Chairlift application. Built with AWS Lambda, DynamoDB, and API Gateway.
 
 ## Architecture
 
@@ -12,8 +12,9 @@ Backend microservice for managing tasks in the Concepto application. Built with 
 
 ## Features
 
-- CRUD operations for tasks
-- Task filtering by status
+- CRUD operations for flights
+- Flight search by route (origin/destination) and date
+- Seat inventory management
 - Input validation with Zod
 - Structured logging with Winston
 - Comprehensive test coverage
@@ -21,98 +22,155 @@ Backend microservice for managing tasks in the Concepto application. Built with 
 
 ## API Endpoints
 
-### Create Task
+### Create Flight
 ```
-POST /tasks
+POST /flights
 Content-Type: application/json
 
 {
-  "title": "Task title (1-200 chars)",
-  "description": "Task description (max 2000 chars)",
-  "status": "TODO" | "IN_PROGRESS" | "DONE" (optional, defaults to TODO)
+  "flightNumber": "AA100",
+  "airlineCode": "AA",
+  "origin": "LAX",
+  "destination": "JFK",
+  "departureDate": "2026-03-15",
+  "departureTime": "08:00",
+  "arrivalDate": "2026-03-15",
+  "arrivalTime": "16:30",
+  "duration": 330,
+  "aircraft": "Boeing 737-800",
+  "capacity": {
+    "economy": 120,
+    "business": 20,
+    "first": 10
+  },
+  "pricing": {
+    "economy": 299.99,
+    "business": 899.99,
+    "first": 1499.99
+  },
+  "status": "SCHEDULED"
 }
 
 Response: 201 Created
 {
   "data": {
-    "id": "uuid",
-    "title": "Task title",
-    "description": "Task description",
-    "status": "TODO",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "flightId": "uuid",
+    "flightNumber": "AA100",
+    "airlineCode": "AA",
+    "origin": "LAX",
+    "destination": "JFK",
+    "departureDate": "2026-03-15",
+    "departureTime": "08:00",
+    "arrivalDate": "2026-03-15",
+    "arrivalTime": "16:30",
+    "duration": 330,
+    "aircraft": "Boeing 737-800",
+    "capacity": {
+      "economy": 120,
+      "business": 20,
+      "first": 10
+    },
+    "availableSeats": {
+      "economy": 120,
+      "business": 20,
+      "first": 10
+    },
+    "pricing": {
+      "economy": 299.99,
+      "business": 899.99,
+      "first": 1499.99
+    },
+    "status": "SCHEDULED",
+    "createdAt": "2026-02-01T00:00:00.000Z",
+    "updatedAt": "2026-02-01T00:00:00.000Z"
   }
 }
 ```
 
-### List Tasks
+### Search Flights
 ```
-GET /tasks?status=TODO|IN_PROGRESS|DONE
+GET /flights/search?origin=LAX&destination=JFK&departureDate=2026-03-15
 
 Response: 200 OK
 {
   "data": [
     {
-      "id": "uuid",
-      "title": "Task title",
-      "description": "Task description",
-      "status": "TODO",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "flightId": "uuid",
+      "flightNumber": "AA100",
+      // ... full flight details
     }
   ]
 }
 ```
 
-### Get Task
+### Get Flight
 ```
-GET /tasks/{id}
+GET /flights/{id}
 
 Response: 200 OK / 404 Not Found
 {
   "data": {
-    "id": "uuid",
-    "title": "Task title",
-    "description": "Task description",
-    "status": "TODO",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "flightId": "uuid",
+    "flightNumber": "AA100",
+    // ... full flight details
   }
 }
 ```
 
-### Update Task
+### Update Flight
 ```
-PUT /tasks/{id}
+PUT /flights/{id}
 Content-Type: application/json
 
 {
-  "title": "Updated title (optional)",
-  "description": "Updated description (optional)",
-  "status": "IN_PROGRESS" (optional)
+  "status": "BOARDING",
+  "departureTime": "08:15"
 }
 
 Response: 200 OK / 404 Not Found
 {
   "data": {
-    "id": "uuid",
-    "title": "Updated title",
-    "description": "Updated description",
-    "status": "IN_PROGRESS",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "flightId": "uuid",
+    "status": "BOARDING",
+    "departureTime": "08:15",
+    // ... full flight details
   }
 }
 ```
 
-### Delete Task
+### Update Seats
 ```
-DELETE /tasks/{id}
+PUT /flights/{id}/seats
+Content-Type: application/json
+
+{
+  "economy": 115,
+  "business": 18,
+  "first": 9
+}
 
 Response: 200 OK / 404 Not Found
 {
   "data": {
-    "message": "Task deleted successfully"
+    "flightId": "uuid",
+    "availableSeats": {
+      "economy": 115,
+      "business": 18,
+      "first": 9
+    },
+    // ... full flight details
+  }
+}
+```
+
+### Delete Flight
+```
+DELETE /flights/{id}
+
+Response: 200 OK / 404 Not Found
+{
+  "data": {
+    "message": "Flight deleted successfully"
   }
 }
 ```
@@ -164,7 +222,7 @@ docker run -p 8000:8000 amazon/dynamodb-local
 
 # Set environment variable
 export AWS_ENDPOINT_URL=http://localhost:8000
-export TABLE_NAME=concepto-tasks-local
+export TABLE_NAME=chairlift-flights-local
 
 # Run tests
 npm test
@@ -194,7 +252,7 @@ cdk deploy
 
 # View outputs
 aws cloudformation describe-stacks \
-  --stack-name ConceptoTasksServiceStack \
+  --stack-name ChairliftFlightsServiceStack \
   --query 'Stacks[0].Outputs'
 ```
 
@@ -215,49 +273,69 @@ The project uses GitHub Actions for CI/CD:
 
 ## DynamoDB Table Design
 
-**Table Name**: `concepto-tasks`
+**Table Name**: `chairlift-flights`
 
 **Primary Key**:
-- PK (Partition Key): `TASK#{taskId}`
-- SK (Sort Key): `TASK#{taskId}`
+- PK (Partition Key): `FLIGHT#{flightId}`
+- SK (Sort Key): `METADATA`
 
-**GSI1** (for status filtering):
-- GSI1PK (Partition Key): `STATUS#{status}`
-- GSI1SK (Sort Key): `CREATED_AT#{createdAt}`
+**GSI1** (for route search):
+- GSI1PK (Partition Key): `ROUTE#{origin}#{destination}`
+- GSI1SK (Sort Key): `DATE#{departureDate}#TIME#{departureTime}`
+
+**GSI2** (for date search):
+- GSI2PK (Partition Key): `DATE#{departureDate}`
+- GSI2SK (Sort Key): `TIME#{departureTime}#FLIGHT#{flightId}`
+
+**GSI3** (for flight number search):
+- GSI3PK (Partition Key): `FLIGHT_NUMBER#{flightNumber}`
+- GSI3SK (Sort Key): `DATE#{departureDate}`
 
 **Attributes**:
-- id: UUID
-- title: string (1-200 chars)
-- description: string (max 2000 chars)
-- status: enum (TODO, IN_PROGRESS, DONE)
+- flightId: UUID
+- flightNumber: string (1-10 chars)
+- airlineCode: string (2 chars, IATA code)
+- origin: string (3 chars, airport code)
+- destination: string (3 chars, airport code)
+- departureDate: string (YYYY-MM-DD)
+- departureTime: string (HH:MM)
+- arrivalDate: string (YYYY-MM-DD)
+- arrivalTime: string (HH:MM)
+- duration: number (minutes)
+- aircraft: string (1-50 chars)
+- capacity: object (economy, business, first)
+- availableSeats: object (economy, business, first)
+- pricing: object (economy, business, first)
+- status: enum (SCHEDULED, BOARDING, DEPARTED, IN_FLIGHT, LANDED, CANCELLED, DELAYED)
 - createdAt: ISO 8601 timestamp
 - updatedAt: ISO 8601 timestamp
 
 ## Project Structure
 
 ```
-concepto-be-tasks/
+chairlift-be-flights/
 ├── src/
-│   ├── handlers/           # Lambda function handlers
-│   │   ├── create-task.ts
-│   │   ├── get-task.ts
-│   │   ├── list-tasks.ts
-│   │   ├── update-task.ts
-│   │   └── delete-task.ts
-│   ├── repositories/       # Data access layer
-│   │   └── task.repository.ts
-│   ├── models/            # Data models and schemas
-│   │   └── task.model.ts
-│   └── utils/             # Utilities
+│   ├── handlers/              # Lambda function handlers
+│   │   ├── create-flight.ts
+│   │   ├── get-flight.ts
+│   │   ├── search-flights.ts
+│   │   ├── update-flight.ts
+│   │   ├── update-seats.ts
+│   │   └── delete-flight.ts
+│   ├── repositories/          # Data access layer
+│   │   └── flight.repository.ts
+│   ├── models/               # Data models and schemas
+│   │   └── flight.model.ts
+│   └── utils/                # Utilities
 │       ├── logger.ts
 │       └── response.ts
-├── infrastructure/        # AWS CDK code
+├── infrastructure/           # AWS CDK code
 │   ├── bin/
 │   │   └── app.ts
 │   └── lib/
-│       └── tasks-service-stack.ts
+│       └── flights-service-stack.ts
 ├── .github/
-│   └── workflows/        # CI/CD pipelines
+│   └── workflows/           # CI/CD pipelines
 │       ├── ci.yml
 │       └── cd.yml
 ├── package.json
@@ -268,15 +346,13 @@ concepto-be-tasks/
 
 ## Environment Variables
 
-- `TABLE_NAME`: DynamoDB table name (default: `concepto-tasks`)
+- `TABLE_NAME`: DynamoDB table name (default: `chairlift-flights`)
 - `LOG_LEVEL`: Logging level (default: `info`)
 - `AWS_REGION`: AWS region (default: `us-west-2`)
 
 ## Related Repositories
 
-- [concepto-bff](https://github.com/tristanl-slalom/concepto-bff) - Backend for Frontend
-- [concepto-fe](https://github.com/tristanl-slalom/concepto-fe) - React Frontend
-- [concepto-meta](https://github.com/tristanl-slalom/concepto-meta) - Meta repository with documentation
+- [chairlift-meta](https://github.com/tristanl-slalom/chairlift-meta) - Meta repository with documentation
 
 ## License
 
